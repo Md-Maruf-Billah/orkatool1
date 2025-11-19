@@ -1,0 +1,1265 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>ASRS S2 Climate Readiness Pulse — Orka Advisory</title>
+
+  <!-- Tailwind -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+  <!-- jsPDF with html2canvas -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+  <style>
+    :root{
+      --orka-navy:#043c5a;
+      --orka-green:#12b28f;
+      --orka-cyan:#2dd3d0;
+      --orka-ink:#0f172a;
+      --bg:#fafbfc;
+      --card:#ffffff;
+      --line:#e8edf2;
+      --text-primary:#1a202c;
+      --text-secondary:#64748b;
+      --text-tertiary:#94a3b8;
+
+      /* traffic-light colors */
+      --tl-green:#22c55e;
+      --tl-yellow:#eab308;
+      --tl-red:#ef4444;
+    }
+    *{ margin:0; padding:0; box-sizing:border-box; }
+    html,body{
+      font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
+      background:var(--bg);
+      color:var(--text-primary);
+      line-height:1.6;
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+      overflow-x:hidden;
+    }
+    .brand-title{ color:var(--orka-navy); letter-spacing:-0.02em; }
+    .eyebrow{
+      letter-spacing:.08em;
+      text-transform:uppercase;
+      color:var(--text-tertiary);
+      font-weight:600;
+      font-size:.6875rem;
+    }
+    .btn-primary{
+      background:var(--orka-green);
+      color:#fff;
+      transition:all 0.3s cubic-bezier(0.4,0,0.2,1);
+      border:none;
+      cursor:pointer;
+      position:relative;
+      overflow:hidden;
+    }
+    .btn-primary::before{
+      content:''; position:absolute; top:50%; left:50%;
+      width:0; height:0; border-radius:50%;
+      background:rgba(255,255,255,0.2);
+      transform:translate(-50%, -50%);
+      transition:width 0.6s, height 0.6s;
+    }
+    .btn-primary:hover::before{ width:300px; height:300px; }
+    .btn-primary:hover{
+      background:#10a180; transform:translateY(-2px);
+      box-shadow:0 12px 28px rgba(18,178,143,.3);
+    }
+    .btn-primary:active{ transform:translateY(0); }
+    .btn-primary:disabled{ opacity:0.5; cursor:not-allowed; transform:none; }
+
+    .btn-secondary{
+      background:var(--orka-navy); color:#fff;
+      transition:all 0.3s cubic-bezier(0.4,0,0.2,1);
+      border:none; cursor:pointer; position:relative; overflow:hidden;
+    }
+    .btn-secondary::before{
+      content:''; position:absolute; top:50%; left:50%;
+      width:0; height:0; border-radius:50%;
+      background:rgba(255,255,255,0.15);
+      transform:translate(-50%, -50%);
+      transition:width 0.6s, height 0.6s;
+    }
+    .btn-secondary:hover::before{ width:300px; height:300px; }
+    .btn-secondary:hover{
+      background:#03344d; transform:translateY(-2px);
+      box-shadow:0 12px 28px rgba(4,60,90,.3);
+    }
+    .btn-outline{
+      background:transparent; border:1.5px solid var(--line);
+      color:var(--text-primary); transition:all 0.2s ease;
+    }
+    .btn-outline:hover{
+      border-color:var(--orka-green); color:var(--orka-green);
+      background:rgba(18,178,143,.04);
+    }
+    .frame{
+      background:var(--card); border:1px solid var(--line);
+      border-radius:16px; box-shadow:0 4px 24px rgba(0,0,0,.04);
+      transition:all 0.3s ease;
+    }
+    .frame:hover{ box-shadow:0 8px 32px rgba(0,0,0,.06); transform:translateY(-2px); }
+    .hero{
+      background:
+        radial-gradient(1400px 700px at 8% -12%, rgba(18,178,143,.08), transparent 55%),
+        radial-gradient(1000px 600px at 108% -18%, rgba(45,211,208,.06), transparent 55%),
+        linear-gradient(180deg, #ffffff 0%, #fafbfc 100%);
+      min-height:100vh;
+    }
+    .muted{ color:var(--text-secondary); }
+    .answer-box{
+      border:1.5px solid var(--line);
+      transition:all 0.3s cubic-bezier(0.4,0,0.2,1);
+      background:var(--card);
+    }
+    .answer-box:hover{
+      border-color:#cbd5e1;
+      box-shadow:0 4px 12px rgba(0,0,0,.06);
+      transform:translateY(-1px);
+    }
+    /* traffic-light selected states */
+    label.option-yes .peer:checked + .answer-box{
+      border-color:var(--tl-green);
+      background:rgba(34,197,94,.10);
+      color:var(--orka-navy);
+      box-shadow:0 0 0 4px rgba(34,197,94,.16);
+      transform:scale(1.02);
+    }
+    label.option-partial .peer:checked + .answer-box{
+      border-color:var(--tl-yellow);
+      background:rgba(234,179,8,.10);
+      color:var(--orka-navy);
+      box-shadow:0 0 0 4px rgba(234,179,8,.18);
+      transform:scale(1.02);
+    }
+    label.option-no .peer:checked + .answer-box{
+      border-color:var(--tl-red);
+      background:rgba(239,68,68,.10);
+      color:var(--orka-navy);
+      box-shadow:0 0 0 4px rgba(239,68,68,.18);
+      transform:scale(1.02);
+    }
+    /* hover tints by option */
+    label.option-yes:hover .answer-box{ border-color:var(--tl-green); background:rgba(34,197,94,.06); }
+    label.option-partial:hover .answer-box{ border-color:var(--tl-yellow); background:rgba(234,179,8,.06); }
+    label.option-no:hover .answer-box{ border-color:var(--tl-red); background:rgba(239,68,68,.06); }
+
+    fieldset{ border:none; }
+    fieldset > legend{
+      padding:0; font-weight:600; color:var(--text-primary);
+      margin-bottom:1.25rem;
+    }
+    input[type="text"], input[type="email"]{
+      border:1.5px solid var(--line); transition:all 0.2s ease; font-size:0.9375rem;
+    }
+    input[type="text"]:focus, input[type="email"]:focus{
+      outline:none; border-color:var(--orka-green);
+      box-shadow:0 0 0 4px rgba(18,178,143,.12);
+    }
+    .fade-in{ animation:fadeIn 0.5s ease-out; }
+    @keyframes fadeIn{ from{ opacity:0; transform:translateY(20px); } to{ opacity:1; transform:translateY(0); } }
+    .section-number{
+      display:inline-block; width:32px; height:32px; border-radius:8px;
+      background:rgba(18,178,143,.1); color:var(--orka-green);
+      font-weight:700; font-size:0.875rem; line-height:32px; text-align:center; margin-right:12px;
+    }
+    .progress-bar{ height:3px; background:var(--line); border-radius:999px; overflow:hidden; position:fixed; top:0; left:0; right:0; z-index:100; }
+    .progress-fill{ height:100%; background:linear-gradient(90deg, var(--orka-green), var(--orka-cyan)); transition:width 0.3s ease; }
+
+    /* minimal additions for charts alignment/scale */
+    .chart-wrap{ height:260px; max-width:420px; margin:0 auto; display:flex; align-items:center; justify-content:center; }
+    canvas{ display:block; margin:0 auto; }
+
+    /* subtle pop for Priority Recommendations */
+    #recCard.emphasis{
+      border-left:4px solid var(--orka-green);
+      background:linear-gradient(180deg, rgba(18,178,143,0.06), rgba(45,211,208,0.04));
+    }
+  </style>
+</head>
+<body class="hero">
+
+<!-- Progress Bar -->
+<div class="progress-bar">
+  <div class="progress-fill" id="progressBar" style="width:0%"></div>
+</div>
+
+<!-- =========================
+      CONFIG
+========================== -->
+<script>
+  const LOGO_URL = "https://www.orkaadvisory.com/wp-content/uploads/2024/10/Orka-Logo-1.png";
+  const CONTACT_LINES = ["Contact", "Melbourne, Australia", "kaushik@orkaadvisory.com"];
+</script>
+
+<div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+<div class="frame p-8 sm:p-12 lg:p-16 fade-in">
+
+  <!-- Header -->
+  <header class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-12 pb-8 border-b border-gray-100">
+    <div class="flex items-center gap-4 mb-4 sm:mb-0">
+      <img id="orkaLogoHeader" alt="Orka Advisory" class="h-12 w-20"/>
+      <div>
+        <div class="eyebrow mb-1">Assessment Tool</div>
+        <h1 class="text-l sm:text-2xl lg:text-4xl font-bold brand-title">
+          ASRS S2 Climate Readiness Pulse
+        </h1>
+      </div>
+    </div>
+    <button
+      id="headerConsultButton"
+      class="hidden sm:inline-flex btn-outline px-6 py-3 rounded-full font-semibold text-sm whitespace-nowrap">
+      Book Consultation
+    </button>
+
+    <!-- Email Modal -->
+    <div id="emailModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+      <div class="bg-white rounded-2xl max-w-md w-full p-8 relative shadow-2xl">
+        <button id="closeModal" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+
+        <h3 class="text-2xl font-bold text-gray-900 mb-2">Contact Orka Advisory</h3>
+        <p class="text-gray-600 mb-6">Choose your preferred method to get in touch</p>
+
+        <div class="space-y-3">
+          <a href="https://mail.google.com/mail/?view=cm&fs=1&to=kaushik@orkaadvisory.com&su=ASRS%20S2%20—%20Consultation%20Request"
+             target="_blank"
+             class="flex items-center gap-3 p-4 border-2 border-gray-200 rounded-xl hover:border-orka-green hover:bg-green-50 transition-all">
+            <svg class="w-6 h-6 text-red-500" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M24 5.457v13.909c0 .904-.732 1.636-1.636 1.636h-3.819V11.73L12 16.64l-6.545-4.91v9.273H1.636A1.636 1.636 0 0 1 0 19.366V5.457c0-2.023 2.309-3.178 3.927-1.964L5.455 4.64 12 9.548l6.545-4.91 1.528-1.145C21.69 2.28 24 3.434 24 5.457z"/>
+            </svg>
+            <div class="flex-1 text-left">
+              <div class="font-semibold text-gray-900">Open in Gmail</div>
+              <div class="text-sm text-gray-500">Web-based email</div>
+            </div>
+          </a>
+
+          <a href="https://outlook.live.com/mail/0/deeplink/compose?to=kaushik@orkaadvisory.com&subject=ASRS%20S2%20—%20Consultation%20Request"
+             target="_blank"
+             class="flex items-center gap-3 p-4 border-2 border-gray-200 rounded-xl hover:border-blue-500 hover:bg-blue-50 transition-all">
+            <svg class="w-6 h-6 text-blue-500" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M24 7.387v9.226c0 1.24-.975 2.174-2.174 2.174h-1.299V7.025h1.3c1.198 0 2.173.976 2.173 2.362zM2.174 4.413h15.217A2.17 2.17 0 0 1 19.565 6.6v10.8a2.17 2.17 0 0 1-2.174 2.187H2.174A2.17 2.17 0 0 1 0 17.4V6.6a2.17 2.17 0 0 1 2.174-2.187zm8.29 7.328l7.826-5.557v11.63l-7.825-5.556zm-8.29-5.557l7.826 5.557-7.825 5.556z"/>
+            </svg>
+            <div class="flex-1 text-left">
+              <div class="font-semibold text-gray-900">Open in Outlook</div>
+              <div class="text-sm text-gray-500">Web-based email</div>
+            </div>
+          </a>
+
+          <button id="copyEmailBtn" class="w-full flex items-center gap-3 p-4 border-2 border-gray-200 rounded-xl hover:border-orka-green hover:bg-green-50 transition-all">
+            <svg class="w-6 h-6 text-orka-green" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+            </svg>
+            <div class="flex-1 text-left">
+              <div class="font-semibold text-gray-900">Copy Email Address</div>
+              <div class="text-sm text-gray-500">kaushik@orkaadvisory.com</div>
+            </div>
+          </button>
+
+          <button id="tryMailtoBtn" class="w-full flex items-center gap-3 p-4 border-2 border-gray-200 rounded-xl hover:border-gray-400 hover:bg-gray-50 transition-all">
+            <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+            </svg>
+            <div class="flex-1 text-left">
+              <div class="font-semibold text-gray-900">Open Default Email App</div>
+              <div class="text-sm text-gray-500">Desktop email client</div>
+            </div>
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Stage 1: Landing -->
+  <section id="landingPage" class="text-center py-16">
+    <div class="max-w-3xl mx-auto">
+      <h2 class="text-3xl sm:text-4xl lg:text-5xl font-bold brand-title mb-6 leading-tight">
+        Assess Your Climate<br class="hidden sm:block"/>Disclosure Readiness
+      </h2>
+      <p class="text-lg sm:text-xl muted max-w-2xl mx-auto mb-4 leading-relaxed">
+        Evaluate your organisation's preparedness for Australia's ASRS S2 climate disclosure standards in approximately 10 minutes.
+      </p>
+      <p class="text-base muted mb-10">
+        Receive a comprehensive readiness score, pillar-level analysis, and actionable executive recommendations.
+      </p>
+      <button id="startButton" class="btn-primary px-10 py-4 rounded-full font-semibold text-base shadow-lg">
+        Begin Assessment
+      </button>
+
+      <div class="mt-16 grid grid-cols-2 sm:grid-cols-5 gap-6 pt-12 border-t border-gray-100">
+        <div class="text-center">
+          <div class="text-2xl font-bold brand-title mb-1">20</div>
+          <div class="text-sm muted">Questions</div>
+        </div>
+        <div class="text-center">
+          <div class="text-2xl font-bold brand-title mb-1">5</div>
+          <div class="text-sm muted">Pillars</div>
+        </div>
+        <div class="text-center">
+          <div class="text-2xl font-bold brand-title mb-1">~10</div>
+          <div class="text-sm muted">Minutes</div>
+        </div>
+        <div class="text-center col-span-2 sm:col-span-1">
+          <div class="text-2xl font-bold brand-title mb-1">PDF</div>
+          <div class="text-sm muted">Report</div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- Stage 2: Lead Capture -->
+  <form id="dataCaptureForm" class="hidden max-w-2xl mx-auto">
+    <div class="mb-8 text-center">
+      <h2 class="text-3xl sm:text-4xl font-bold brand-title mb-3">Let's Get Started</h2>
+      <p class="muted text-base">We'll generate a personalized PDF report with your results.</p>
+    </div>
+
+    <div class="p-8 bg-white border border-gray-100 rounded-2xl shadow-sm">
+      <div class="space-y-6">
+        <div>
+          <label class="block text-sm font-semibold text-gray-900 mb-2">Full Name</label>
+          <input id="name" name="name" required
+                 class="w-full rounded-xl border-gray-200 p-3.5 bg-white text-base"
+                 type="text" placeholder="Jane Citizen"/>
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-gray-900 mb-2">Company Name</label>
+          <input id="company" name="company" required
+                 class="w-full rounded-xl border-gray-200 p-3.5 bg-white text-base"
+                 type="text" placeholder="Acme Corporation"/>
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-gray-900 mb-2">
+            Email Address <span class="text-red-500">*</span>
+          </label>
+          <input id="email" name="email" required
+                 class="w-full rounded-xl border-gray-200 p-3.5 bg-white text-base"
+                 type="email" placeholder="jane@acmecorp.com"/>
+          <p class="muted text-xs mt-2">Required to access results and download your PDF report.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="text-center mt-8">
+      <button class="btn-primary px-10 py-4 rounded-full font-semibold text-base shadow-lg">
+        Continue to Questions
+      </button>
+    </div>
+  </form>
+
+  <!-- Stage 3: Questionnaire -->
+  <form id="quizForm" class="hidden">
+    <div class="mb-10 text-center">
+      <h2 class="text-3xl sm:text-4xl font-bold brand-title mb-3">Pulse Check</h2>
+      <p class="muted text-base max-w-2xl mx-auto">
+        Answer all 20 questions across 5 key pillars. Each response contributes to your overall readiness score.
+      </p>
+      <div class="mt-6 inline-flex flex-wrap justify-center items-center gap-6 text-sm">
+        <div class="flex items-center gap-2">
+          <div class="w-3 h-3 rounded-full bg-green-500"></div>
+          <span class="muted"><b class="text-gray-900">2 pts</b> — Yes/Comprehensive</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
+          <span class="muted"><b class="text-gray-900">1 pt</b> — Partial/Planning</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <div class="w-3 h-3 rounded-full bg-red-500"></div>
+          <span class="muted"><b class="text-gray-900">0 pts</b> — No</span>
+        </div>
+      </div>
+    </div>
+
+    <template id="answerRow">
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-4">
+        <label class="relative cursor-pointer option-yes">
+          <input type="radio" class="absolute h-0 w-0 opacity-0 peer" required/>
+          <div class="answer-box p-4 rounded-xl text-center font-medium text-gray-900 hover:border-gray-300">
+            <div class="text-sm font-semibold mb-1">Yes / Comprehensive</div>
+            <div class="text-xs muted">Fully implemented</div>
+          </div>
+        </label>
+        <label class="relative cursor-pointer option-partial">
+          <input type="radio" class="absolute h-0 w-0 opacity-0 peer"/>
+          <div class="answer-box p-4 rounded-xl text-center font-medium text-gray-900 hover:border-gray-300">
+            <div class="text-sm font-semibold mb-1">Partial / Planning</div>
+            <div class="text-xs muted">In progress</div>
+          </div>
+        </label>
+        <label class="relative cursor-pointer option-no">
+          <input type="radio" class="absolute h-0 w-0 opacity-0 peer"/>
+          <div class="answer-box p-4 rounded-xl text-center font-medium text-gray-900 hover:border-gray-300">
+            <div class="text-sm font-semibold mb-1">No</div>
+            <div class="text-xs muted">Not implemented</div>
+          </div>
+        </label>
+      </div>
+    </template>
+
+    <div id="sections" class="space-y-8 mb-10"></div>
+
+    <div class="text-center pt-8 border-t border-gray-100">
+      <button class="btn-primary px-12 py-4 rounded-full font-semibold text-base shadow-lg">
+        Calculate My Results
+      </button>
+    </div>
+  </form>
+
+  <!-- Stage 4: Results -->
+  <section id="resultsPage" class="hidden">
+    <div class="mb-10 text-center">
+      <h2 class="text-3xl sm:text-4xl font-bold brand-title mb-3">Your Result</h2>
+      <p class="muted text-base">Comprehensive analysis of your climate disclosure preparedness</p>
+    </div>
+
+    <div id="resultBox" class="p-10 rounded-2xl border-2 mb-6 text-center"></div>
+
+    <p id="scoreMessage" class="text-center text-lg muted mb-3 max-w-2xl mx-auto"></p>
+
+    <div class="p-6 bg-blue-50 border border-blue-100 rounded-xl mb-10">
+      <div class="flex items-start gap-3">
+        <div class="w-6 h-6 rounded-full bg-blue-500 text-white flex items-center justify-center flex-shrink-0 mt-0.5">
+          <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+          </svg>
+        </div>
+        <div class="flex-1">
+          <div class="text-sm font-semibold text-gray-900 mb-1">Key Recommendation</div>
+          <p id="execSuggestion" class="text-sm text-gray-700 leading-relaxed"></p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Breakdown (centered) -->
+    <div class="max-w-2xl mx-auto mb-10">
+      <div class="frame p-6">
+        <h3 class="text-base font-semibold text-gray-900 mb-4 text-center">Detailed Breakdown</h3>
+        <div id="breakdownList" class="space-y-3"></div>
+      </div>
+    </div>
+
+
+    <!-- Hidden chart canvas for PDF generation -->
+    <div style="position: absolute; left: -9999px; width: 500px; height: 500px;">
+      <canvas id="scoreChart" width="500" height="500"></canvas>
+    </div>
+
+
+    <!-- Recommendations -->
+    <div id="recCard" class="frame p-6 mb-4 hidden emphasis">
+      <div class="flex items-center gap-2 mb-2">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-emerald-600" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 100 20 10 10 0 000-20zm1 5v6h5v2h-7V7h2z"/></svg>
+        <h3 class="text-base font-semibold text-gray-900">Priority Recommendations</h3>
+        <span class="ml-2 px-2 py-0.5 text-[10px] rounded-full bg-white border border-emerald-200 text-emerald-700 font-semibold">Top 3</span>
+      </div>
+      <ul id="recList" class="list-disc pl-6 space-y-2 text-sm text-gray-700"></ul>
+    </div>
+
+    <div class="flex flex-col sm:flex-row justify-center gap-4 pt-8 border-t border-gray-100">
+      <button id="downloadPdfButton" class="btn-secondary px-8 py-4 rounded-full font-semibold text-base shadow-lg" disabled>
+        Download PDF Report
+      </button>
+      <button
+         id="bookMeetingButton"
+         class="btn-primary px-8 py-4 rounded-full font-semibold text-base shadow-lg text-center">
+        Book Consultation with Orka
+      </button>
+    </div>
+  </section>
+</div>
+</div>
+
+<script>
+/* ---------- init logo ---------- */
+document.getElementById("orkaLogoHeader").src = LOGO_URL;
+
+/* ---------- Email Modal functionality ---------- */
+const emailModal = document.getElementById("emailModal");
+const closeModalBtn = document.getElementById("closeModal");
+const copyEmailBtn = document.getElementById("copyEmailBtn");
+const tryMailtoBtn = document.getElementById("tryMailtoBtn");
+
+function openEmailModal() {
+  emailModal.classList.remove("hidden");
+  document.body.style.overflow = "hidden";
+}
+
+function closeEmailModal() {
+  emailModal.classList.add("hidden");
+  document.body.style.overflow = "auto";
+}
+
+// Open modal when consultation buttons are clicked
+document.getElementById("headerConsultButton").addEventListener("click", openEmailModal);
+document.getElementById("bookMeetingButton").addEventListener("click", openEmailModal);
+
+// Close modal
+closeModalBtn.addEventListener("click", closeEmailModal);
+emailModal.addEventListener("click", function(e) {
+  if (e.target === emailModal) closeEmailModal();
+});
+
+// Copy email address
+copyEmailBtn.addEventListener("click", async function() {
+  try {
+    await navigator.clipboard.writeText("kaushik@orkaadvisory.com");
+    const originalText = this.querySelector(".font-semibold").textContent;
+    this.querySelector(".font-semibold").textContent = "✓ Email Copied!";
+    setTimeout(() => {
+      this.querySelector(".font-semibold").textContent = originalText;
+    }, 2000);
+  } catch (err) {
+    alert("Email: kaushik@orkaadvisory.com");
+  }
+});
+
+// Try mailto link
+tryMailtoBtn.addEventListener("click", function() {
+  window.location.href = "mailto:kaushik@orkaadvisory.com?subject=ASRS%20S2%20—%20Consultation%20Request";
+});
+
+/* ---------- RAW QUESTIONS (exact text, unchanged) ---------- */
+const QUESTIONS = [
+  { id:"governance", max:8,  title:"1. Governance",           subtitle:"Max 8 points",
+    q:[
+      "Does the board formally oversee climate related risks and opportunities?",
+      "Is there clear management responsibility for climate disclosures (e.g., CFO, CRO, CSO)?",
+      "Does the Board receive updates on climate issues?",
+      "Does the board have a dedicated sustainability or risk committee that reviews climate matters?"
+    ]
+  },
+  { id:"strategy",   max:10, title:"2. Strategy",             subtitle:"Max 10 points",
+    q:[
+      "Has your organisation identified short, medium, and long term climate risks and opportunities?",
+      "Do you use climate scenario analysis to test business resilience?",
+      "Are climate related opportunities integrated into strategic planning and investment decisions?",
+      "Does the company disclose the potential financial impacts of climate risks?",
+      "Are climate considerations factored into capital allocation or project approval decisions?"
+    ]
+  },
+  { id:"risk",       max:8,  title:"3. Risk Management",      subtitle:"Max 8 points",
+    q:[
+      "Are climate risks integrated into your enterprise risk management framework?",
+      "Do you have defined processes for identifying and assessing scope 1, 2, and 3 emissions risks?",
+      "Are climate risk processes reviewed and updated regularly?",
+      "Do you engage external experts to validate climate risk assumptions and methodologies?"
+    ]
+  },
+  { id:"metrics",    max:10, title:"4. Metrics & Targets",    subtitle:"Max 10 points",
+    q:[
+      "Do you disclose Scope 1 and Scope 2 emissions (in CO₂-e)?",
+      "Do you measure or plan to measure Scope 3 emissions?",
+      "Have you set climate related targets (e.g. net zero, interim milestones)?",
+      "Do you disclose progress against climate targets on at least an annual basis?",
+      "Do you disclose climate related CapEx, OpEx, or investments aligned with transition activities?"
+    ]
+  },
+  { id:"assurance",  max:4,  title:"5. Assurance & Reporting",subtitle:"Max 4 points",
+    q:[
+      "Are your climate related disclosures externally assured or audited?",
+      "Are your climate data systems and internal controls robust enough to meet audit standards?"
+    ]
+  }
+];
+
+/* ---------- Render questionnaire ---------- */
+const sectionsEl = document.getElementById("sections");
+const ansTpl = document.getElementById("answerRow");
+QUESTIONS.forEach((sec, secIdx)=>{
+  const fs = document.createElement("fieldset");
+  fs.className = "p-6 sm:p-8 bg-white rounded-2xl border border-gray-100 shadow-sm";
+  const lg = document.createElement("legend");
+  lg.className = "flex items-center text-xl font-bold text-gray-900 mb-6";
+  lg.innerHTML = `
+    <span class="section-number">${secIdx + 1}</span>
+    <span>${sec.title.replace(/^\d+\.\s*/, '')}</span>
+  `;
+  fs.appendChild(lg);
+
+  sec.q.forEach((text, i)=>{
+    const wrap = document.createElement("div");
+    wrap.className = "mb-6 last:mb-0";
+    wrap.innerHTML = `
+      <p class="font-medium text-gray-900 mb-3 text-base leading-relaxed">
+        <span class="inline-block w-6 text-center text-sm font-semibold text-gray-400 mr-2">${i+1}.</span>${text}
+      </p>
+    `;
+    const row = ansTpl.content.cloneNode(true);
+    const radios = row.querySelectorAll("input[type=radio]");
+    radios[0].name = `q_${sec.id}_${i+1}`; radios[0].value = 2; radios[0].dataset.category = sec.id; radios[0].required = true;
+    radios[1].name = `q_${sec.id}_${i+1}`; radios[1].value = 1; radios[1].dataset.category = sec.id;
+    radios[2].name = `q_${sec.id}_${i+1}`; radios[2].value = 0; radios[2].dataset.category = sec.id;
+    wrap.appendChild(row);
+    fs.appendChild(wrap);
+  });
+
+  sectionsEl.appendChild(fs);
+});
+
+/* ---------- Flow ---------- */
+const landingPage = document.getElementById("landingPage");
+const dataCaptureForm = document.getElementById("dataCaptureForm");
+const quizForm = document.getElementById("quizForm");
+const resultsPage = document.getElementById("resultsPage");
+const downloadBtn = document.getElementById("downloadPdfButton");
+const progressBar = document.getElementById("progressBar");
+const recCard = document.getElementById("recCard");
+const recList = document.getElementById("recList");
+
+function updateProgress(pct){ progressBar.style.width = pct + "%"; }
+
+document.getElementById("startButton").addEventListener("click", ()=>{
+  landingPage.classList.add("hidden");
+  dataCaptureForm.classList.remove("hidden");
+  dataCaptureForm.classList.add("fade-in");
+  updateProgress(25);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+});
+
+let userDetails = {};
+let quizResults = null;
+let radar;
+
+dataCaptureForm.addEventListener("submit",(e)=>{
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  userDetails = Object.fromEntries(fd.entries());
+  dataCaptureForm.classList.add("hidden");
+  quizForm.classList.remove("hidden");
+  quizForm.classList.add("fade-in");
+  updateProgress(50);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+});
+
+quizForm.addEventListener("change", ()=>{
+  const totalQuestions = 20;
+  const answered = quizForm.querySelectorAll('input[type="radio"]:checked').length;
+  const progress = 50 + (answered / totalQuestions * 25);
+  updateProgress(progress);
+});
+
+/* ---------- helper: rec generation ---------- */
+function generateRecommendations(answerMap, pillarPercents){
+  const recs = [];
+  const T = {
+    governance: [
+      "Formalise Board oversight with a documented climate charter and scheduled reporting cadence.",
+      "Assign climate disclosure ownership (CFO/CRO/CSO) with KPIs and a RACI.",
+      "Stand up or empower a Board risk/sustainability committee for climate matters."
+    ],
+    strategy: [
+      "Introduce climate scenario analysis (e.g., NGFS) and quantify potential financial impacts.",
+      "Link scenario insights to capital allocation and investment approvals.",
+      "Publish how climate opportunities inform growth and product strategy."
+    ],
+    risk: [
+      "Embed climate risks into ERM with thresholds, owners, and review cadence.",
+      "Document processes for identifying Scope 1–3 risk drivers and update semi-annually.",
+      "Engage external experts to validate climate risk assumptions and methods."
+    ],
+    metrics: [
+      "Measure material Scope 3 categories and set interim reduction targets.",
+      "Disclose annual progress against climate targets with clear variance commentary.",
+      "Tag climate-aligned CapEx/OpEx and report transition investments."
+    ],
+    assurance: [
+      "Establish internal controls over emissions/targets; prepare for limited assurance.",
+      "Harden data lineage and audit trails across systems and spreadsheets.",
+      "Plan a roadmap from limited to reasonable assurance over 2–3 cycles."
+    ]
+  };
+  const ordered = Object.entries(pillarPercents).sort((a,b)=>a[1]-b[1]).map(x=>x[0]);
+  for (const p of ordered){
+    if (recs.length>=3) break;
+    const answers = answerMap[p] || [];
+    const hasNo = answers.some(v=>v===0);
+    const hasPartial = answers.some(v=>v===1);
+    if (hasNo){ recs.push(T[p][0]); }
+    else if (hasPartial){ recs.push(T[p][1]); }
+    else { recs.push(T[p][2]); }
+  }
+  const seen = new Set(recs);
+  for (const p of ["governance","strategy","risk","metrics","assurance"]){
+    if (recs.length>=3) break;
+    for (const opt of T[p]){
+      if (!seen.has(opt)){ recs.push(opt); seen.add(opt); break; }
+    }
+  }
+  return recs.slice(0,3);
+}
+
+/* ---------- Scoring + Chart (fixed to render after page is visible) ---------- */
+quizForm.addEventListener("submit", async (e)=>{
+  e.preventDefault();
+  updateProgress(75);
+
+  // show results before building chart so canvas has size
+  quizForm.classList.add("hidden");
+  resultsPage.classList.remove("hidden");
+  resultsPage.classList.add("fade-in");
+
+  // wait 2 RAFs to ensure layout is committed
+  await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+
+  const checked = quizForm.querySelectorAll('input[type="radio"]:checked');
+  const catScores = { governance:0, strategy:0, risk:0, metrics:0, assurance:0 };
+  const answerMap = { governance:[], strategy:[], risk:[], metrics:[], assurance:[] };
+
+  checked.forEach(inp=>{
+    const v = Number(inp.value);
+    const cat = inp.dataset.category;
+    catScores[cat] += v;
+    answerMap[cat].push(v);
+  });
+
+  const total = catScores.governance + catScores.strategy + catScores.risk + catScores.metrics + catScores.assurance;
+  const pct = Math.round(total / 40 * 100);
+
+  const box = document.getElementById("resultBox");
+  let grade, message, cls;
+  if (pct >= 70){
+    grade="Ready — Strong Foundation";
+    message="Excellent progress across all ASRS S2 pillars. Your organisation demonstrates strong readiness for climate disclosure requirements.";
+    cls="border-green-500 bg-green-50";
+  }
+  else if (pct >= 40){
+    grade="Developing — Key Gaps Identified";
+    message="Good foundation established with important areas requiring attention before the mandate takes effect.";
+    cls="border-yellow-500 bg-yellow-50";
+  }
+  else {
+    grade="At Risk — Immediate Action Required";
+    message="Significant preparation needed. We recommend prioritizing near-term remediation efforts.";
+    cls="border-red-500 bg-red-50";
+  }
+
+  box.className = `p-10 rounded-2xl border-2 mb-6 text-center ${cls}`;
+  box.innerHTML = `
+    <div class="text-sm font-semibold muted uppercase tracking-wide mb-2">Overall Readiness</div>
+    <div class="text-6xl sm:text-7xl font-extrabold my-2 tracking-tight text-gray-900">${pct}%</div>
+    <div class="inline-block px-4 py-2 rounded-full bg-white border-2 ${cls.replace('bg-', 'border-')} mt-2">
+      <div class="text-base font-semibold">${grade}</div>
+    </div>
+  `;
+
+  document.getElementById("scoreMessage").textContent = message;
+
+  const norm = {
+    governance:+(catScores.governance * (10/8)).toFixed(1),
+    strategy:+(catScores.strategy * (10/10)).toFixed(1),
+    risk:+(catScores.risk * (10/8)).toFixed(1),
+    metrics:+(catScores.metrics * (10/10)).toFixed(1),
+    assurance:+(catScores.assurance * (10/4)).toFixed(1)
+  };
+
+  const suggestions = {
+    governance:"Strengthen Board oversight mechanisms and formalize climate governance charters.",
+    strategy:"Implement scenario analysis and quantify financial impacts within planning cycles.",
+    risk:"Embed climate risks into your ERM framework and engage external validation experts.",
+    metrics:"Expand measurement to Scope 3, establish clear targets, and report progress annually.",
+    assurance:"Enhance internal controls and pursue limited assurance for climate disclosures."
+  };
+  const lowestKey = Object.entries(norm).sort((a,b)=>a[1]-b[1])[0][0];
+  document.getElementById("execSuggestion").textContent =
+    `Focus on ${titleize(lowestKey)}: ${suggestions[lowestKey]}`;
+
+  const breakdownEl = document.getElementById("breakdownList");
+  const breakdownData = [
+    { key:'governance', label:'Governance', max:8, score:catScores.governance },
+    { key:'strategy', label:'Strategy', max:10, score:catScores.strategy },
+    { key:'risk', label:'Risk Management', max:8, score:catScores.risk },
+    { key:'metrics', label:'Metrics & Targets', max:10, score:catScores.metrics },
+    { key:'assurance', label:'Assurance & Reporting', max:4, score:catScores.assurance }
+  ];
+
+  breakdownEl.innerHTML = breakdownData.map(item=>{
+    const itemPct = Math.round((item.score / item.max) * 100);
+    return `
+      <div class="flex items-center justify-between py-3 border-b border-gray-100 last:border-0">
+        <div class="flex-1">
+          <div class="text-sm font-semibold text-gray-900 mb-1">${item.label}</div>
+          <div class="flex items-center gap-2">
+            <div class="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
+              <div class="h-full" style="background:linear-gradient(90deg, var(--orka-green), var(--orka-cyan)); width:${itemPct}%"></div>
+            </div>
+            <div class="text-xs font-semibold text-gray-500">${itemPct}%</div>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  // build chart after visible
+  const labels = ["Governance","Strategy","Risk\nManagement","Metrics &\nTargets","Assurance &\nReporting"];
+  const data = [norm.governance, norm.strategy, norm.risk, norm.metrics, norm.assurance];
+
+  const ctxEl = document.getElementById("scoreChart");
+  const ctx = ctxEl ? ctxEl.getContext("2d") : null;
+
+  if (ctx){
+    if (window.radar) window.radar.destroy?.();
+    window.radar = new Chart(ctx, {
+      type: "radar",
+      data: {
+        labels: [
+          "Governance",
+          "Strategy",
+          "Risk Management",
+          "Metrics & Targets",
+          "Assurance & Reporting"
+        ],
+        datasets: [{
+          label: "Score (0–10)",
+          data,
+          borderWidth: 3,
+          fill: true,
+          backgroundColor: "rgba(18,178,143,.12)",
+          borderColor: "rgba(18,178,143,1)",
+          pointBackgroundColor: "rgba(4,60,90,1)",
+          pointBorderColor: "#fff",
+          pointBorderWidth: 2,
+          pointRadius: 5,
+          pointHoverRadius: 7
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        layout: {
+          padding: {
+            top: 30,
+            bottom: 30,
+            left: 60,
+            right: 60
+          }
+        },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: 'rgba(15,23,42,0.95)',
+            padding: 12,
+            titleColor: '#fff',
+            bodyColor: '#fff',
+            borderColor: 'rgba(255,255,255,0.1)',
+            borderWidth: 1
+          }
+        },
+        scales: {
+          r: {
+            suggestedMin: 0,
+            suggestedMax: 10,
+            ticks: {
+              stepSize: 2,
+              showLabelBackdrop: false,
+              color: "#94a3b8",
+              font: { size: 11 }
+            },
+            grid: { color: "rgba(148,163,184,.2)" },
+            angleLines: { color: "rgba(148,163,184,.2)" },
+            pointLabels: {
+              color: "#1a202c",
+              font: { size: 11, weight: "600", family: "Inter" },
+              padding: 20,
+              callback: function(label) {
+                // Add line breaks for long labels
+                if (label === "Assurance & Reporting") return ["Assurance &", "Reporting"];
+                if (label === "Risk Management") return ["Risk", "Management"];
+                if (label === "Metrics & Targets") return ["Metrics &", "Targets"];
+                return label;
+              }
+            }
+          }
+        },
+        elements: {
+          line: { borderJoinStyle: 'round' }
+        }
+      }
+    });
+
+    // force one resize after paint
+    requestAnimationFrame(()=> window.radar?.resize());
+  } else {
+    console.error("scoreChart canvas/context not found or Chart.js missing");
+  }
+
+  const pillarPercents = {
+    governance: Math.round((catScores.governance/8)*100),
+    strategy: Math.round((catScores.strategy/10)*100),
+    risk: Math.round((catScores.risk/8)*100),
+    metrics: Math.round((catScores.metrics/10)*100),
+    assurance: Math.round((catScores.assurance/4)*100)
+  };
+  const top3 = generateRecommendations(answerMap, pillarPercents);
+  if (top3.length){
+    recList.innerHTML = top3.map(t=>`<li>${t}</li>`).join('');
+    recCard.classList.remove('hidden');
+  }
+
+  quizResults = { total, pct, grade, message, raw:catScores, normalized:norm, pillarPercents, recs: top3 };
+  downloadBtn.dataset.ready = "1";
+  downloadBtn.disabled = false;
+  downloadBtn.style.opacity = '1';
+
+  updateProgress(100);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+});
+
+function titleize(key){
+  const map = {
+    governance:"Governance",
+    strategy:"Strategy",
+    risk:"Risk Management",
+    metrics:"Metrics & Targets",
+    assurance:"Assurance & Reporting"
+  };
+  return map[key] || key;
+}
+
+/* ---------- PDF Generation ---------- */
+downloadBtn.addEventListener("click", async ()=>{
+  const hasResults = quizResults && Number.isFinite(quizResults.pct);
+  if (!hasResults || downloadBtn.dataset.ready !== "1") {
+    alert("Please complete the assessment first to generate your PDF report.");
+    return;
+  }
+
+  const chartCanvas = document.getElementById("scoreChart");
+  if (!chartCanvas) {
+    alert("Chart not found. Please refresh and complete the assessment again.");
+    return;
+  }
+
+  downloadBtn.disabled = true;
+  downloadBtn.textContent = "Generating PDF...";
+
+  try{
+    await new Promise(resolve => setTimeout(resolve, 500));
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ unit:"pt", format:"a4", compress:true });
+
+    const Mx = 50;
+    let y = 60;
+    const pageWidth = 595;
+    const pageHeight = 842;
+    const contentWidth = pageWidth - 2*Mx;
+
+    // Logo with professional text fallback
+    try{
+      const logoImg = await loadImageWithRetry(LOGO_URL);
+      doc.addImage(logoImg, "PNG", Mx, y, 90, 27);
+    }catch(err){
+      console.warn("Logo load failed:", err);
+      doc.setFont("helvetica","bold");
+      doc.setFontSize(16);
+      doc.setTextColor(4,60,90);
+      doc.text("Orka Advisory", Mx, y + 18);
+    }
+
+    // Contact info
+    doc.setFont("helvetica","normal");
+    doc.setFontSize(8);
+    doc.setTextColor(100,116,139);
+    const rightX = pageWidth - Mx;
+    let contactY = y + 5;
+    CONTACT_LINES.forEach(line => {
+      doc.text(line, rightX, contactY, { align:"right" });
+      contactY += 12;
+    });
+
+    // Title
+    y = 120;
+    doc.setFont("helvetica","bold");
+    doc.setFontSize(22);
+    doc.setTextColor(4,60,90);
+    doc.text("ASRS S2 Climate Readiness Assessment", Mx, y);
+
+    doc.setFontSize(11);
+    doc.setTextColor(100,116,139);
+    doc.setFont("helvetica","normal");
+    doc.text("Results Report", Mx, y + 20);
+
+    // User info box
+    y = 165;
+    doc.setFillColor(247,250,252);
+    doc.setDrawColor(226,232,240);
+    doc.setLineWidth(1);
+    doc.roundedRect(Mx, y, contentWidth, 75, 6, 6, "FD");
+
+    y += 25;
+    doc.setFont("helvetica","bold");
+    doc.setFontSize(9);
+    doc.setTextColor(71,85,105);
+    doc.text("NAME", Mx + 20, y);
+    doc.text("COMPANY", Mx + 20, y + 25);
+    doc.text("EMAIL", Mx + 280, y);
+
+    doc.setFont("helvetica","normal");
+    doc.setFontSize(10);
+    doc.setTextColor(15,23,42);
+    doc.text(userDetails.name || "—", Mx + 90, y);
+    doc.text(userDetails.company || "—", Mx + 90, y + 25);
+    doc.text(userDetails.email || "—", Mx + 330, y);
+
+    // Overall % (percentage-only hero)
+    y = 280;
+    doc.setFont("helvetica","bold");
+    doc.setFontSize(16);
+    doc.setTextColor(15,23,42);
+    doc.text("Overall Readiness", Mx, y);
+
+    y += 50;
+    doc.setFont("helvetica","bold");
+    doc.setFontSize(56);
+    doc.setTextColor(18,178,143);
+    doc.text(`${quizResults.pct}%`, Mx, y);
+
+    // Grade badge
+    doc.setFont("helvetica","bold");
+    doc.setFontSize(12);
+    doc.setTextColor(4,60,90);
+    doc.text(quizResults.grade, Mx + 140, y - 10);
+
+    // Message
+    y += 30;
+    doc.setFont("helvetica","normal");
+    doc.setFontSize(10);
+    doc.setTextColor(71,85,105);
+    const msgLines = doc.splitTextToSize(quizResults.message, contentWidth);
+    doc.text(msgLines, Mx, y);
+
+    // Insert Key Recommendation from results page (as-is)
+    const keyRecText = (document.getElementById("execSuggestion") && document.getElementById("execSuggestion").innerText) || "";
+    if (keyRecText) {
+      let krY = y + msgLines.length * 14 + 14;
+      doc.setFillColor(239, 246, 255);  // blue-50
+      doc.setDrawColor(191, 219, 254);  // blue-200
+      doc.roundedRect(Mx, krY, contentWidth, 48, 6, 6, "FD");
+      doc.setFont("helvetica","bold");
+      doc.setFontSize(10);
+      doc.setTextColor(30, 41, 59);
+      doc.text("Key Recommendation", Mx + 12, krY + 16);
+      doc.setFont("helvetica","normal");
+      doc.setFontSize(9);
+      doc.setTextColor(71,85,105);
+      const krLines = doc.splitTextToSize(keyRecText, contentWidth - 24);
+      doc.text(krLines, Mx + 12, krY + 32);
+      y = krY + 48;
+    } else {
+      y += msgLines.length * 14;
+    }
+
+    // Divider
+    y += 25;
+    doc.setDrawColor(226,232,240);
+    doc.setLineWidth(0.5);
+    doc.line(Mx, y, pageWidth - Mx, y);
+
+    // Centered pillar title above both columns
+    y += 25;
+    const col1Width = 220;
+    const col2X = Mx + col1Width + 40;
+
+    doc.setFont("helvetica","bold");
+    doc.setFontSize(14);
+    doc.setTextColor(15,23,42);
+    doc.text("Pillar Breakdown", pageWidth/2, y, { align:"center" });
+
+    // Pillar Breakdown (percent-only), left column
+    let yBreakdown = y + 25;
+    doc.setFont("helvetica","normal");
+    doc.setFontSize(9);
+
+    const breakdownItems = [
+      ["Governance", quizResults.raw.governance, 8],
+      ["Strategy", quizResults.raw.strategy, 10],
+      ["Risk Management", quizResults.raw.risk, 8],
+      ["Metrics & Targets", quizResults.raw.metrics, 10],
+      ["Assurance & Reporting", quizResults.raw.assurance, 4]
+    ];
+
+    breakdownItems.forEach(([label, score, max]) => {
+      const pct = Math.round((score / max) * 100);
+
+      doc.setTextColor(71,85,105);
+      doc.text(label, Mx, yBreakdown);
+
+      doc.setFont("helvetica","normal");
+      doc.setTextColor(100,116,139);
+      doc.text(`${pct}%`, Mx + 180, yBreakdown, { align:"right" });
+
+      const barY = yBreakdown + 3;
+      const barWidth = 150;
+      doc.setFillColor(241,245,249);
+      doc.roundedRect(Mx, barY, barWidth, 4, 2, 2, "F");
+
+      const fillWidth = (pct / 100) * barWidth;
+      if (fillWidth > 0) {
+        doc.setFillColor(18,178,143);
+        doc.roundedRect(Mx, barY, fillWidth, 4, 2, 2, "F");
+      }
+      yBreakdown += 22;
+    });
+
+    // Chart image at right (slightly smaller and aligned)
+    try {
+      const chartDataURL = chartCanvas.toDataURL("image/png", 1.0);
+      const chartSize = 200; // slightly smaller for one-page fit
+      doc.addImage(chartDataURL, "PNG", col2X, y + 10, chartSize, chartSize);
+    } catch(chartErr) {
+      console.error("Chart capture failed:", chartErr);
+      doc.setFont("helvetica","normal");
+      doc.setTextColor(220,38,38);
+      doc.setFontSize(10);
+      doc.text("Chart unavailable", col2X, y + 100);
+    }
+
+    /* Recommendations block — emphasized but compact */
+    const footerY = pageHeight - 100;
+    let recY = Math.max(yBreakdown + 20, y + 230);
+
+    // Estimate height for bullets
+    const recs = (quizResults.recs || []).length ? quizResults.recs : ["No recommendations generated."];
+    const estimatedLines = recs.reduce((acc,r)=> acc + Math.ceil((r.length+3)/80), 0);
+    const estimatedHeight = 28 + (estimatedLines * 12) + 20;
+
+    if (recY + estimatedHeight > footerY - 10){
+      doc.addPage();
+      y = 60;
+      recY = y + 40;
+    }
+
+    // Title
+    doc.setFont("helvetica","bold");
+    doc.setFontSize(12);
+    doc.setTextColor(15,23,42);
+    doc.text("Priority Recommendations", Mx, recY);
+    recY += 16;
+
+    // Light panel
+    doc.setFillColor(240, 253, 249);
+    doc.setDrawColor(209, 250, 229);
+    const panelHeight = Math.max(40, estimatedHeight);
+    doc.roundedRect(Mx, recY - 10, contentWidth, panelHeight, 6, 6, "FD");
+
+    // Bullets
+    doc.setFont("helvetica","normal");
+    doc.setFontSize(9);
+    doc.setTextColor(71,85,105);
+    let curY = recY + 6;
+    recs.forEach((r)=>{
+      const lines = doc.splitTextToSize("• " + r, contentWidth - 16);
+      doc.text(lines, Mx + 8, curY);
+      curY += lines.length * 12 + 2;
+    });
+
+    // Footer
+    doc.setDrawColor(226,232,240);
+    doc.setLineWidth(0.5);
+    doc.line(Mx, footerY, pageWidth - Mx, footerY);
+
+    doc.setFont("helvetica","normal");
+    doc.setFontSize(7);
+    doc.setTextColor(107,114,128);
+    const disclaimer = "This report is for informational purposes only and does not constitute financial, legal, or professional advice. It is based on self-reported responses and may not reflect a comprehensive assessment of your organisation's climate readiness. For tailored guidance and implementation support, please contact Orka Advisory.";
+    const disclaimerLines = doc.splitTextToSize(disclaimer, contentWidth);
+    doc.text(disclaimerLines, Mx, footerY + 15);
+
+    doc.setFontSize(7);
+    doc.setTextColor(156,163,175);
+    const today = new Date().toLocaleDateString('en-AU', { year: 'numeric', month: 'long', day: 'numeric' });
+    doc.text(`Generated: ${today}`, Mx, pageHeight - 30);
+    doc.text("Orka Advisory © 2025", pageWidth - Mx, pageHeight - 30, { align:"right" });
+
+    const filename = `Orka-Climate-Readiness-${(userDetails.company||"Report").replace(/[^a-z0-9]/gi, '-')}-${Date.now()}.pdf`;
+    doc.save(filename);
+
+    setTimeout(() => {
+      downloadBtn.disabled = false;
+      downloadBtn.textContent = "Download PDF Report";
+    }, 500);
+
+  }catch(err){
+    console.error("PDF Generation Error:", err);
+    alert("Unable to generate PDF. Please try again or contact support if the issue persists.");
+    downloadBtn.disabled = false;
+    downloadBtn.textContent = "Download PDF Report";
+  }
+});
+
+function loadImageWithRetry(url, retries = 3){
+  return new Promise((resolve, reject)=>{
+    const attemptLoad = (attemptsLeft) => {
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.onload = () => resolve(img);
+      img.onerror = (err) => {
+        if (attemptsLeft > 1) {
+          setTimeout(() => attemptLoad(attemptsLeft - 1), 500);
+        } else {
+          reject(err);
+        }
+      };
+      img.src = url + '?t=' + Date.now();
+    };
+    attemptLoad(retries);
+  });
+}
+
+document.getElementById("dataCaptureForm").addEventListener("submit",(e)=>{
+  if(e.submitter) e.submitter.blur();
+});
+document.getElementById("quizForm").addEventListener("submit",(e)=>{
+  if(e.submitter) e.submitter.blur();
+});
+
+// Smooth scroll behavior
+document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+  anchor.addEventListener('click', function (e) {
+    e.preventDefault();
+    const target = document.querySelector(this.getAttribute('href'));
+    if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+});
+
+// Button ripple
+document.querySelectorAll('.btn-primary, .btn-secondary').forEach(button => {
+  button.addEventListener('click', function(e) {
+    const ripple = document.createElement('span');
+    const rect = this.getBoundingClientRect();
+    const size = Math.max(rect.width, rect.height);
+    const x = e.clientX - rect.left - size / 2;
+    const y = e.clientY - rect.top - size / 2;
+    ripple.style.cssText = `
+      position: absolute; width: ${size}px; height: ${size}px; border-radius: 50%;
+      background: rgba(255,255,255,0.6); left: ${x}px; top: ${y}px; pointer-events: none;
+      transform: scale(0); animation: ripple 0.6s ease-out;
+    `;
+    this.appendChild(ripple);
+    setTimeout(() => ripple.remove(), 600);
+  });
+});
+const style = document.createElement('style');
+style.textContent = `@keyframes ripple { to { transform: scale(4); opacity: 0; } }`;
+document.head.appendChild(style);
+
+</script>
+</body>
+</html>
